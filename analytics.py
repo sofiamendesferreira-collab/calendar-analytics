@@ -108,11 +108,12 @@ def period_range(tipo: str, data_referencia: date) -> tuple:
     raise ValueError(f"Tipo de período desconhecido: {tipo}")
 
 
-def expected_hours(data_inicio: date, data_fim: date) -> float:
-    """Horas esperadas no período: 8h por cada dia útil (seg-sex)."""
-    dias = [data_inicio + timedelta(days=i) for i in range((data_fim - data_inicio).days + 1)]
-    dias_uteis = sum(1 for d in dias if d.weekday() < 5)  # 0=segunda ... 4=sexta
-    return dias_uteis * EXPECTED_DAILY_HOURS
+def expected_hours(eventos: list) -> float:
+    """Horas esperadas no período: 8h por cada dia com pelo menos 1 evento
+    registado (ignora fins de semana, feriados e férias automaticamente,
+    já que nesses dias não há eventos no calendário)."""
+    dias_com_eventos = set(evento["data"] for evento in eventos)
+    return len(dias_com_eventos) * EXPECTED_DAILY_HOURS
 
 
 def work_type_stats(eventos: list) -> dict:
