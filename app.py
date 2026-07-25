@@ -2,7 +2,44 @@ import streamlit as st
 from parser import load_events
 from analytics import daily_summary, overtime_summary, total_overtime, client_stats, type_stats
 
+PALETA_CORES = ["#A47551", "#C9A876", "#8A9B7E", "#D4B896", "#6B5344", "#B5A08C"]
+
 st.set_page_config(page_title="Horas de Trabalho", layout="wide")
+
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Lato&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Lato', sans-serif;
+    }
+
+    h1, h2, h3 {
+        font-family: 'Playfair Display', serif !important;
+        color: #3E2F23 !important;
+    }
+
+    div[data-testid="stMetric"] {
+        background-color: #FFFFFF;
+        border: 1px solid #E4D9C7;
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 2px 6px rgba(62, 47, 35, 0.06);
+    }
+    div[data-testid="stMetricLabel"] {
+        font-size: 14px;
+        color: #8A7967;
+    }
+    div[data-testid="stMetricValue"] {
+        color: #3E2F23;
+    }
+
+    section[data-testid="stSidebar"] {
+        background-color: #EDE4D3;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("📊 Dashboard de Horas de Trabalho")
 
 def verificar_password():
@@ -108,56 +145,60 @@ df_dias = pd.DataFrame({
 })
 df_dias = df_dias.sort_values("Data")
 
-fig = px.bar(df_dias, x="Data", y="Horas", title="")
-fig.add_hline(y=8, line_dash="dash", line_color="gray",
-              annotation_text="Dia normal (8h)")
-
+fig = px.bar(df_dias, x="Data", y="Horas", title="", color_discrete_sequence=PALETA_CORES, height=320)
+fig.add_hline(y=8, line_dash="dash", line_color="gray", annotation_text="Dia normal (8h)")
 st.plotly_chart(fig, use_container_width=True)
-st.subheader("Horas por Cliente")
-
-dados_cliente = client_stats(eventos)
-df_cliente = pd.DataFrame({
-    "Cliente": list(dados_cliente.keys()),
-    "Horas": list(dados_cliente.values()),
-}).sort_values("Horas", ascending=False)
-
-fig_cliente = px.bar(df_cliente, x="Cliente", y="Horas")
-st.plotly_chart(fig_cliente, use_container_width=True)
 
 
-st.subheader("Distribuição por Tipo de Atividade")
+col_esq, col_dir = st.columns(2)
 
-dados_tipo = type_stats(eventos)
-df_tipo = pd.DataFrame({
-    "Tipo": list(dados_tipo.keys()),
-    "Horas": list(dados_tipo.values()),
-})
+with col_esq:
+    st.subheader("Horas por Cliente")
+    dados_cliente = client_stats(eventos)
+    df_cliente = pd.DataFrame({
+        "Cliente": list(dados_cliente.keys()),
+        "Horas": list(dados_cliente.values()),
+    }).sort_values("Horas", ascending=False)
+    fig_cliente = px.bar(df_cliente, x="Cliente", y="Horas", color_discrete_sequence=PALETA_CORES, height=320)
+    st.plotly_chart(fig_cliente, use_container_width=True)
 
-fig_tipo = px.pie(df_tipo, names="Tipo", values="Horas")
-st.plotly_chart(fig_tipo, use_container_width=True)
-st.subheader("Percentagem por Tipo de Trabalho")
-
-dados_tipo_trabalho = work_type_stats(eventos)
-if dados_tipo_trabalho:
-    df_tipo_trabalho = pd.DataFrame({
-        "Tipo de Trabalho": list(dados_tipo_trabalho.keys()),
-        "Horas": list(dados_tipo_trabalho.values()),
+with col_dir:
+    st.subheader("Distribuição por Tipo de Atividade")
+    dados_tipo = type_stats(eventos)
+    df_tipo = pd.DataFrame({
+        "Tipo": list(dados_tipo.keys()),
+        "Horas": list(dados_tipo.values()),
     })
-    fig_tipo_trabalho = px.pie(df_tipo_trabalho, names="Tipo de Trabalho", values="Horas")
-    st.plotly_chart(fig_tipo_trabalho, use_container_width=True)
-else:
-    st.info("Sem eventos de projeto neste período.")
+    fig_tipo = px.pie(df_tipo, names="Tipo", values="Horas", color_discrete_sequence=PALETA_CORES, height=320)
+    st.plotly_chart(fig_tipo, use_container_width=True)
 
 
-st.subheader("Percentagem por Projeto")
+col_esq2, col_dir2 = st.columns(2)
 
-dados_projeto = project_stats(eventos)
-if dados_projeto:
-    df_projeto = pd.DataFrame({
-        "Projeto": list(dados_projeto.keys()),
-        "Horas": list(dados_projeto.values()),
-    })
-    fig_projeto = px.pie(df_projeto, names="Projeto", values="Horas")
-    st.plotly_chart(fig_projeto, use_container_width=True)
-else:
-    st.info("Sem eventos de projeto neste período.")
+with col_esq2:
+    st.subheader("Percentagem por Tipo de Trabalho")
+    dados_tipo_trabalho = work_type_stats(eventos)
+    if dados_tipo_trabalho:
+        df_tipo_trabalho = pd.DataFrame({
+            "Tipo de Trabalho": list(dados_tipo_trabalho.keys()),
+            "Horas": list(dados_tipo_trabalho.values()),
+        })
+        fig_tipo_trabalho = px.pie(df_tipo_trabalho, names="Tipo de Trabalho", values="Horas",
+                                     color_discrete_sequence=PALETA_CORES, height=320)
+        st.plotly_chart(fig_tipo_trabalho, use_container_width=True)
+    else:
+        st.info("Sem eventos de projeto neste período.")
+
+with col_dir2:
+    st.subheader("Percentagem por Projeto")
+    dados_projeto = project_stats(eventos)
+    if dados_projeto:
+        df_projeto = pd.DataFrame({
+            "Projeto": list(dados_projeto.keys()),
+            "Horas": list(dados_projeto.values()),
+        })
+        fig_projeto = px.pie(df_projeto, names="Projeto", values="Horas",
+                               color_discrete_sequence=PALETA_CORES, height=320)
+        st.plotly_chart(fig_projeto, use_container_width=True)
+    else:
+        st.info("Sem eventos de projeto neste período.")
